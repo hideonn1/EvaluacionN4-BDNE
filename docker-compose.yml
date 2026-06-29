@@ -1,46 +1,57 @@
+version: "3.9"
 name: comerciotech
+
 
 networks:
   comercio_tech:
     driver: bridge
 
+
 volumes:
   mongo_data:
     driver: local
 
+
 services:
+
   mongodb:
+
     image: mongo:7.0.21
-    build: .
     container_name: mongodb_comerciotech
+
+    hostname: mongodb
+
     restart: unless-stopped
-    command: ["mongod", "--wiredTigerCacheSizeGB", "1", "--auth"]
+
+    init: true
+
+    stop_grace_period: 60s
+
 
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: comercio_tech
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
 
-    ports:
-      - "27018:27017"
 
     networks:
       - comercio_tech
 
+    ports:
+      - "27018:27017"
+
+
     volumes:
+
       - mongo_data:/data/db
+
+      - ./mongod.conf:/etc/mongod.conf:ro
+
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
 
-    deploy:
-      resources:
-        limits:
-          cpus: "3.0"
-          memory: 2G
-        reservations:
-          cpus: "1.0"
-          memory: 1G
 
     healthcheck:
+
       test:
         [
           "CMD",
@@ -48,26 +59,46 @@ services:
           "--quiet",
           "--eval",
           "db.adminCommand('ping').ok",
-          "-u",
+          "--username",
           "${MONGO_ROOT_USERNAME}",
-          "-p",
+          "--password",
           "${MONGO_ROOT_PASSWORD}",
           "--authenticationDatabase",
-          "admin",
+          "admin"
         ]
+
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 40s
 
+
     security_opt:
       - no-new-privileges:true
+
     tmpfs:
       - /tmp:size=128m
+
     shm_size: "256m"
 
+
     logging:
+
       driver: json-file
+
       options:
+
         max-size: "50m"
+
         max-file: "5"
+
+        compress: "true"
+
+
+    labels:
+
+      proyecto: "ComercioTech"
+
+      servicio: "MongoDB"
+
+      entorno: "Desarrollo"
