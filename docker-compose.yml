@@ -1,0 +1,127 @@
+version: "3.9"
+name: comerciotech
+
+# ==========================
+# REDES
+# ==========================
+networks:
+  comercio_tech:
+    driver: bridge
+
+# ==========================
+# VOLÚMENES
+# ==========================
+volumes:
+  mongo_data:
+    driver: local
+
+# ==========================
+# SERVICIOS
+# ==========================
+services:
+
+  mongodb:
+
+    image: mongo:7.0.21
+    container_name: mongodb_comerciotech
+
+    hostname: mongodb
+
+    restart: unless-stopped
+
+    init: true
+
+    stop_grace_period: 60s
+
+    # ==========================
+    # VARIABLES DE ENTORNO
+    # ==========================
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+
+    # ==========================
+    # RED
+    # ==========================
+    networks:
+      - comercio_tech
+
+    ports:
+      - "27018:27017"
+
+    # ==========================
+    # VOLÚMENES
+    # ==========================
+    volumes:
+
+      # Base de datos persistente
+      - mongo_data:/data/db
+
+      # Configuración del servidor
+      - ./mongod.conf:/etc/mongod.conf:ro
+
+      # Script de inicialización
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+
+    # ==========================
+    # HEALTHCHECK
+    # ==========================
+    healthcheck:
+
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "--eval",
+          "db.adminCommand('ping').ok",
+          "--username",
+          "${MONGO_ROOT_USERNAME}",
+          "--password",
+          "${MONGO_ROOT_PASSWORD}",
+          "--authenticationDatabase",
+          "admin"
+        ]
+
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+    # ==========================
+    # HARDENING
+    # ==========================
+    security_opt:
+      - no-new-privileges:true
+
+    tmpfs:
+      - /tmp:size=128m
+
+    shm_size: "256m"
+
+    # ==========================
+    # LOGS
+    # ==========================
+    logging:
+
+      driver: json-file
+
+      options:
+
+        max-size: "50m"
+
+        max-file: "5"
+
+        compress: "true"
+
+    # ==========================
+    # LABELS
+    # ==========================
+    labels:
+
+      proyecto: "ComercioTech"
+
+      servicio: "MongoDB"
+
+      entorno: "Desarrollo"
