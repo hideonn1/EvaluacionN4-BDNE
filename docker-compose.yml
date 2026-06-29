@@ -11,9 +11,7 @@ volumes:
     driver: local
 
 services:
-
   mongodb:
-
     image: mongo:7.0.21
 
     container_name: mongodb_comerciotech
@@ -26,13 +24,7 @@ services:
 
     stop_grace_period: 60s
 
-    command:
-      [
-        "--config",
-        "/etc/mongod.conf",
-        "--wiredTigerCacheSizeGB",
-        "1"
-      ]
+    command: ["--config", "/etc/mongod.conf", "--wiredTigerCacheSizeGB", "1"]
 
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
@@ -72,7 +64,7 @@ services:
           "--password",
           "${MONGO_ROOT_PASSWORD}",
           "--authenticationDatabase",
-          "admin"
+          "admin",
         ]
 
       interval: 30s
