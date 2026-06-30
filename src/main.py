@@ -1,14 +1,28 @@
+# Punto de entrada de la aplicación SISTEMA COMERCIOTECH.
+
+# Arma la conexión a la base de datos y delega el control de la
+# aplicación al ControladorPrincipal (patrón MVC). Mantiene el modo
+# '--test-mode', usado por el pipeline de CI/CD para validar que la
+# conexión a MongoDB y las consultas básicas funcionan correctamente
+# (ver docker-compose.yml / Dockerfile).
+
 import sys
 
-from crud import listar_productos_en_stock
+from controllers.controlador_principal import ControladorPrincipal
+from database import obtener_conexion_db
+from models.producto import RepositorioProductos
 
 
-def verificar_flujo_ci():
+def verificar_flujo_ci() -> bool:
+    # test usado por el pipeline de CI/CD para validar la conexión a datos.
     print("Ejecutando Smoke-Test de conexiones para el Pipeline de Seguridad...")
     try:
-        productos = listar_productos_en_stock()
+        db = obtener_conexion_db()
+        repositorio = RepositorioProductos(db)
+        productos = repositorio.listar_disponibles()
         print(
-            f"Componentes de software enlazados de manera exitosa. Elementos leídos: {len(productos)}"
+            f"Componentes de software enlazados de manera exitosa. "
+            f"Elementos leídos: {len(productos)}"
         )
         return True
     except Exception as e:
@@ -16,10 +30,15 @@ def verificar_flujo_ci():
         return False
 
 
+def main() -> None:
+    print("SISTEMA COMERCIOTECH INICIADO (ENTORNO LOCAL)")
+    db = obtener_conexion_db()
+    app = ControladorPrincipal(db)
+    app.ejecutar()
+
+
 if __name__ == "__main__":
     if "--test-mode" in sys.argv:
-        if verificar_flujo_ci():
-            sys.exit(0)
-        sys.exit(1)
+        sys.exit(0 if verificar_flujo_ci() else 1)
     else:
-        print("SISTEMA COMERCIOTECH INICIADO (ENTORNO LOCAL)")
+        main()

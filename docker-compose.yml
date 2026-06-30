@@ -72,7 +72,9 @@ services:
         max-file: "5"
 
   app:
-    image: python:3.11-slim
+    build:
+      context: .
+      dockerfile: Dockerfile.app
     container_name: app_comerciotech
     depends_on:
       mongodb:
@@ -85,8 +87,7 @@ services:
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
       MONGO_DATABASE: ${MONGO_DATABASE}
-    # agregamos manejo de señales TTY para mantener el contenedor interactivo si es necesario
+    # agregamos manejo de señales TTY para mantener el contenedor intercativo si es necsario
     stdin_open: true
     tty: true
-    command: >
-      sh -c "pip install --no-cache-dir -r requirements.txt && python src/main.py"
+    command: ["python", "src/main.py"]
