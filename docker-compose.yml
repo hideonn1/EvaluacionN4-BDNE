@@ -14,12 +14,11 @@ services:
     build: .
     container_name: mongodb_comerciotech
     restart: unless-stopped
-    command: ["mongod", "--wiredTigerCacheSizeGB", "1", "--auth"]
 
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: comercio_tech
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
 
     ports:
       - "27018:27017"
@@ -71,3 +70,23 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+  app:
+    image: python:3.11-slim
+    container_name: app_comerciotech
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - comercio_tech
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      MONGO_DATABASE: ${MONGO_DATABASE}
+    # agregamos manejo de señales TTY para mantener el contenedor interactivo si es necesario
+    stdin_open: true
+    tty: true
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt && python src/main.py"
