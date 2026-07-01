@@ -9,7 +9,6 @@ políticas de resiliencia (timeouts, connection pooling y soporte opcional TLS).
 
 Guía de uso:
     from database import obtener_conexion_db
-    
     db = obtener_conexion_db()
     if db is not None:
         # Operar con la base de datos
@@ -38,32 +37,12 @@ _cliente_mongo: Optional[MongoClient] = None
 
 
 def obtener_conexion_db() -> Optional[Database]:
-    """
-    Establece y retorna una conexión segura a la base de datos MongoDB.
-    Utiliza un pool de conexiones persistente para optimizar los recursos.
-
-    Parámetros:
-        Ninguno explícito. La configuración se inyecta vía variables de entorno (.env).
-
-    Retorno:
-        Database: Instancia de la base de datos MongoDB lista para operar.
-        None: Si ocurre un error fatal y no se puede establecer conexión.
-
-    Manejo de errores:
-        Captura explícitamente ConnectionFailure y ConfigurationError.
-        Alerta por salida estándar de error (stderr) protegiendo las credenciales.
-
-    Ejemplo:
-        >>> db = obtener_conexion_db()
-        >>> type(db)
-        <class 'pymongo.database.Database'>
-    """
     global _cliente_mongo
 
     user = os.getenv("MONGO_ROOT_USERNAME")
     password = os.getenv("MONGO_ROOT_PASSWORD")
     db_name = os.getenv("MONGO_DATABASE", "comerciotech_db")
-    
+
     # Configuración de Pooling y Resiliencia
     max_pool = int(os.getenv("MONGO_MAX_POOL_SIZE", "50"))
     min_pool = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
@@ -94,11 +73,13 @@ def obtener_conexion_db() -> Optional[Database]:
             tls=usar_tls,
             # tlsAllowInvalidCertificates=True  # Habilitar en desarrollo si se usa TLS autorealizado
         )
-        
+
         # Validar conexión real al cluster/servidor
         _cliente_mongo.admin.command("ping")
-        print(f"[Conexión Exitosa] Conectado a MongoDB. Pool configurado: {min_pool}-{max_pool} conexiones.")
-        
+        print(
+            f"[Conexión Exitosa] Conectado a MongoDB. Pool configurado: {min_pool}-{max_pool} conexiones."
+        )
+
         return _cliente_mongo[db_name]
 
     except ConnectionFailure as e:
@@ -119,5 +100,5 @@ def obtener_conexion_db() -> Optional[Database]:
             f"Detalle: {e}",
             file=sys.stderr,
         )
-    
+
     return None

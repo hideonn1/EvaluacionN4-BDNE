@@ -2,8 +2,9 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from bson.objectid import ObjectId
-from models.base_model import RepositorioBase
 from pymongo.errors import PyMongoError
+
+from models.base_model import RepositorioBase
 
 
 @dataclass
