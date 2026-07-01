@@ -18,6 +18,12 @@ def verificar_flujo_ci() -> bool:
     print("Ejecutando Smoke-Test de conexiones para el Pipeline de Seguridad...")
     try:
         db = obtener_conexion_db()
+        if db is None:
+            print(
+                "Error de integración asíncrona: no se pudo establecer la conexión a la base de datos.",
+                file=sys.stderr,
+            )
+            return False
         repositorio = RepositorioProductos(db)
         productos = repositorio.listar_disponibles()
         print(
@@ -33,6 +39,12 @@ def verificar_flujo_ci() -> bool:
 def main() -> None:
     print("SISTEMA COMERCIOTECH INICIADO (ENTORNO LOCAL)")
     db = obtener_conexion_db()
+    if db is None:
+        print(
+            "No se pudo establecer conexión con la base de datos. Revisar archivo .env y que MongoDB esté disponible.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     app = ControladorPrincipal(db)
     app.ejecutar()
 
