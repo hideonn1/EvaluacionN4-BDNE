@@ -9,7 +9,6 @@ políticas de resiliencia (timeouts, connection pooling y soporte opcional TLS).
 
 Guía de uso:
     from database import obtener_conexion_db
-    
     db = obtener_conexion_db()
     if db is not None:
         # Operar con la base de datos
