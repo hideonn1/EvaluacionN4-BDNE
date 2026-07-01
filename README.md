@@ -1,77 +1,183 @@
-# SISTEMA COMERCIOTECH — Arquitectura MVC
+# SISTEMA COMERCIOTECH
 
-Refactorización del proyecto original (`database.py` + `crud.py` + `main.py`)
-a una arquitectura **Modelo-Vista-Controlador**, aplicando Programación
-Orientada a Objetos en cada capa.
+Sistema de gestión de clientes, productos y pedidos para un comercio,
+desarrollado como Evaluación 4 del curso **Bases de Datos No
+Estructuradas** de INACAP. Aplica **MongoDB** como motor de
+base de datos NoSQL documental, contenedores **Docker** para el
+entorno de despliegue, y una arquitectura de software en **Python**
+organizada bajo el patrón **MVC** con **Programación Orientada a
+Objetos**.
 
-## Estructura
+## Entorno de despliegue colaborativo
+
+La aplicación CLI se ejecuta finalmente sobre un servidor **Debian GNU/Linux**.
+Parte del desarrollo se realizó directamente en la máquina virtual de dicho servidor,
+administrada por uno de los integrantes del equipo; el resto del equipo se conectó mediante
+una VPN mesh con SSH, configurada con Tailscale, para tareas de CI/CD, desarrollo, instalación
+de dependencias y configuración general del servidor.
+
+## Objetivo del proyecto
+
+El proyecto busca demostrar el ciclo completo de diseño e implementación de una
+solución de persistencia NoSQL para un caso de negocio, cubriendo:
+
+1. **Análisis de requisitos del negocio**: volúmenes de datos,
+   rendimiento, escalabilidad, disponibilidad, seguridad y
+   cumplimiento normativo de un comercio que gestiona clientes,
+   catálogo de productos y pedidos.
+2. **Selección y configuración del entorno**: sistema operativo,
+   plataforma de virtualización (contenedores Docker) y los recursos
+   asignados a cada servicio.
+3. **Instalación y configuración segura de MongoDB**: autenticación
+   por usuario/contraseña, restricciones de red, límites de recursos
+   y buenas prácticas de hardening (ver `mongod.conf` y
+   `docker-compose.yml`).
+4. **Diseño del modelo de datos NoSQL**: colecciones `clientes`,
+   `productos` y `pedidos`, con subdocumentos embebidos para los
+   ítems de cada pedido, validación de esquema (`$jsonSchema`) e
+   índices (ver `scripts/init-mongo.js`).
+5. **Desarrollo de la capa de aplicación**: conexión segura al motor
+   de base de datos, y funciones CRUD completas sobre las tres
+   colecciones, implementadas en Python con PyMongo, organizadas en
+   una arquitectura **Modelo-Vista-Controlador** para separar la
+   persistencia, la interfaz de consola y la lógica de negocio.
+
+## Arquitectura
 
 ```
-src/
-├── main.py                          # Punto de entrada (modo interactivo y --test-mode)
-├── database.py                      # Infraestructura: conexión a MongoDB
-├── models/                          # CAPA MODELO
-│   ├── base_model.py                #   RepositorioBase (ABC): CRUD genérico + manejo de errores
-│   ├── cliente.py                   #   Cliente (entidad) + RepositorioClientes
-│   ├── producto.py                  #   Producto (entidad) + RepositorioProductos
-│   └── pedido.py                    #   Pedido + ItemPedido (subdocumento) + RepositorioPedidos
-├── views/                           # CAPA VISTA
-│   ├── vista_base.py                #   VistaBase: utilidades de E/S por consola
-│   ├── vista_cliente.py
-│   ├── vista_producto.py
-│   └── vista_pedido.py
-└── controllers/                     # CAPA CONTROLADOR
-    ├── controlador_cliente.py
-    ├── controlador_producto.py
-    ├── controlador_pedido.py
-    └── controlador_principal.py     # Orquesta el menú general (compone los 3 controladores)
+.
+├── Dockerfile              # Imagen de MongoDB (config + script de inicialización)
+├── Dockerfile.app          # Imagen de la aplicación Python (dependencias precompiladas)
+├── docker-compose.yml      # Orquesta los servicios mongodb y app
+├── mongod.conf             # Configuración del servidor MongoDB
+├── requirements.txt        # Dependencias Python (pymongo, python-dotenv, flake8)
+├── .env.example            # Plantilla de variables de entorno (copiar a .env)
+├── scripts/
+│   └── init-mongo.js       # Crea colecciones con validación de esquema + índices
+└── src/
+    ├── main.py             # Punto de entrada (modo interactivo y --test-mode)
+    ├── database.py         # Conexión a MongoDB (Singleton + pool de conexiones)
+    ├── models/              # CAPA MODELO
+    │   ├── base_model.py    #   RepositorioBase (ABC): CRUD genérico + manejo de errores
+    │   ├── cliente.py        #   Cliente (entidad) + RepositorioClientes
+    │   ├── producto.py       #   Producto (entidad) + RepositorioProductos
+    │   └── pedido.py         #   Pedido + ItemPedido (subdocumento) + RepositorioPedidos
+    ├── views/                # CAPA VISTA
+    │   ├── vista_base.py     #   Utilidades de entrada/salida por consola
+    │   ├── vista_cliente.py
+    │   ├── vista_producto.py
+    │   └── vista_pedido.py
+    └── controllers/          # CAPA CONTROLADOR
+        ├── controlador_cliente.py
+        ├── controlador_producto.py
+        ├── controlador_pedido.py    # Crea pedidos: valida cliente y descuenta stock
+        └── controlador_principal.py # Menú general (compone los 3 controladores)
 ```
 
-## Por qué esta organización
+- **Modelo**: cada colección tiene una entidad (`@dataclass`) y un
+  **Repositorio** que hereda de `RepositorioBase`, encapsulando CRUD,
+  validación de datos y manejo de `PyMongoError`.
+- **Vista**: solo construye menús, solicita datos por consola y
+  formatea la salida. No conoce MongoDB ni reglas de negocio.
+- **Controlador**: conecta Vista y Modelo. `ControladorPedido`, por
+  ejemplo, orquesta tres repositorios a la vez (pedidos, clientes y
+  productos) para validar que el cliente exista y descontar stock al
+  crear un pedido, revirtiéndolo si la creación falla.
 
-- **Modelo** (`models/`): cada colección de MongoDB tiene una entidad
-  (`@dataclass`) que representa el documento en memoria, y un
-  **Repositorio** que hereda de `RepositorioBase` (clase abstracta) y
-  encapsula las operaciones CRUD, la validación de datos y el manejo
-  de errores de `PyMongoError`. Esto evita duplicar `try/except`
-  como ocurría en el `crud.py` original y aplica el patrón
-  *Repository* clásico sobre PyMongo.
-- **Vista** (`views/`): solo construye menús, pide datos por consola
-  y formatea la salida. No conoce MongoDB ni reglas de negocio.
-- **Controlador** (`controllers/`): conecta Vista y Modelo. Decide
-  qué hacer con la entrada del usuario, construye las entidades y
-  llama al repositorio correspondiente, sin mezclar lógica de
-  presentación ni de persistencia.
+## Requisitos previos
 
-## Cambios relevantes respecto al proyecto original
+- Docker y Docker Compose instalados.
+- Un archivo `.env` en la raíz del proyecto (no se sube al
+  repositorio). Cópialo desde la plantilla:
 
-- `crud.py` se reemplaza por los repositorios dentro de `models/`
-  (misma responsabilidad, pero con clases, herencia y validación).
-- Se agregó **validación de datos** antes de insertar (formato de
-  RUT y email, precio/stock no negativos, estados de pedido válidos).
-- `pedido.py` modela explícitamente **subdocumentos** (`ItemPedido`)
-  embebidos dentro de cada pedido, con cálculo de `subtotal` y
-  `total`.
-- `obtener_pedidos_activos` ahora filtra realmente por `estado` (no
-  entregado/cancelado), en vez de devolver todos los documentos.
-- `main.py` conserva exactamente el comportamiento de
-  `--test-mode` que usa el pipeline de CI/CD (`docker-compose.yml`),
-  por lo que **no es necesario modificar** `Dockerfile`,
-  `docker-compose.yml` ni `requirements.txt`.
+  ```bash
+  cp .env.example .env
+  ```
 
-## Ejecución
+  Luego edita `.env` con tus propias credenciales:
+
+  ```
+  MONGO_ROOT_USERNAME=tu_usuario
+  MONGO_ROOT_PASSWORD=tu_password_segura
+  MONGO_DATABASE=comerciotech_db
+  ```
+
+  > ⚠️ Evita caracteres reservados de URI (`$ ? @ : / # & +`) en la
+  > contraseña, ya que se usa para construir la cadena de conexión de
+  > MongoDB (`MONGO_URI`) directamente en `docker-compose.yml`.
+
+## Cómo levantar el proyecto
 
 ```bash
-# Entorno interactivo
-python src/main.py
-
-# Smoke-test (usado por CI/CD)
-python src/main.py --test-mode
+# Construye las imágenes y levanta ambos servicios en segundo plano
+docker compose up -d --build mongodb app
 ```
 
-## Cambios en la siguiente actualización:
+Esto crea:
+- `mongodb_comerciotech`: contenedor de MongoDB, con las colecciones
+  y validación de esquema inicializadas por `scripts/init-mongo.js`
+  la primera vez que se crea el volumen.
+- `app_comerciotech`: contenedor de la aplicación Python, con las
+  dependencias ya instaladas en la imagen (`Dockerfile.app`).
 
-- Agregar pruebas unitarias por repositorio (mockeando `pymongo.collection.Collection`).
-- Extender `ControladorPedido` con una acción para **crear** pedidos
-  (seleccionando cliente y productos desde los otros repositorios),
-  dejado fuera de este alcance para no acoplar controladores entre sí.
+## Cómo ejecutar la aplicación (modo interactivo)
+
+```bash
+docker compose run --rm app python src/main.py
+```
+
+Muestra el menú principal (Clientes / Productos / Pedidos) por
+consola, operando directamente sobre la base de datos del contenedor.
+
+## Cómo correr el smoke-test (usado por el pipeline de CI/CD)
+
+Valida la conexión a MongoDB y una consulta básica, sin entrar al
+menú interactivo:
+
+```bash
+docker compose run --rm app python src/main.py --test-mode
+```
+
+Retorna código de salida `0` si la conexión y la consulta fueron
+exitosas, o `1` en caso de error (por ejemplo, si MongoDB no está
+disponible o las credenciales son inválidas).
+
+## Verificaciones manuales adicionales
+
+**Ver los índices y la validación de esquema aplicados a una colección:**
+
+```bash
+docker exec -it mongodb_comerciotech mongosh \
+  -u <MONGO_ROOT_USERNAME> -p <MONGO_ROOT_PASSWORD> \
+  --authenticationDatabase admin comerciotech_db \
+  --eval "db.clientes.getIndexes()"
+```
+
+**Probar que el validador de esquema rechaza datos inválidos:**
+
+```bash
+docker exec -it mongodb_comerciotech mongosh \
+  -u <MONGO_ROOT_USERNAME> -p <MONGO_ROOT_PASSWORD> \
+  --authenticationDatabase admin comerciotech_db \
+  --eval 'db.clientes.insertOne({rut: "malformado", nombre: "Test", email: "no-es-email"})'
+```
+
+Debe fallar con `Document failed validation`.
+
+## Detener y limpiar el entorno
+
+```bash
+docker compose down        # detiene y elimina los contenedores
+docker compose down -v     # además elimina el volumen de datos de MongoDB
+```
+
+> Usa `-v` cuando quieras forzar que `scripts/init-mongo.js` se
+> vuelva a ejecutar desde cero (por ejemplo, tras modificar el
+> esquema de validación).
+
+## Próximos pasos sugeridos
+
+- Agregar pruebas unitarias por repositorio (mockeando
+  `pymongo.collection.Collection` o usando `mongomock`).
+- Agregar reportes agregados (ej. ventas por producto) usando el
+  framework de agregación de MongoDB.
