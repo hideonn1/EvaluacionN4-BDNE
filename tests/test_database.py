@@ -9,14 +9,12 @@ import database
 
 @pytest.fixture(autouse=True)
 def reset_singleton():
-    """Reset the database singleton before each test."""
     database._cliente_mongo = None
     yield
     database._cliente_mongo = None
 
 
 def test_obtener_conexion_exitosa(mocker):
-    """Prueba que la conexión a MongoDB se establece correctamente."""
     mocker.patch.dict(
         os.environ,
         {
@@ -44,7 +42,6 @@ def test_obtener_conexion_exitosa(mocker):
 
 
 def test_obtener_conexion_falla_conexion(mocker):
-    """Prueba el manejo de errores cuando MongoDB no responde."""
     mocker.patch(
         "database.MongoClient", side_effect=ConnectionFailure("Error de conexion")
     )
@@ -55,7 +52,6 @@ def test_obtener_conexion_falla_conexion(mocker):
 
 
 def test_obtener_conexion_reutiliza_singleton(mocker):
-    """Prueba que si ya existe una conexión activa, se reutiliza."""
     mock_client_instance = MagicMock()
     mock_db = MagicMock()
     mock_client_instance.__getitem__.return_value = mock_db
@@ -71,5 +67,5 @@ def test_obtener_conexion_reutiliza_singleton(mocker):
     assert db1 is not None
     assert db2 is not None
     assert db1 == db2
-    # MongoClient solo debería ser instanciado una vez
+
     assert database.MongoClient.call_count == 1
