@@ -1,23 +1,5 @@
-// ============================================================================
-// CT-09: Inicialización del esquema y validación de colecciones (Cristóbal)
-// 
-// El diseño de la base de datos se basa en un modelo documental optimizado 
-// para las consultas frecuentes del caso de estudio. Se implementó una capa 
-// de validación en el servidor de MongoDB para asegurar la integridad de los 
-// datos en tiempo de escritura. 
-// 
-// Se utiliza el operador $jsonSchema para aplicar restricciones de tipos, 
-// formatos obligatorios y rangos de valores, evitando la "contaminación" de 
-// la base de datos con documentos mal formados.
-// ============================================================================
-
-// Seleccionar la base de datos
 db = db.getSiblingDB('comerciotech_db');
 
-// ----------------------------------------------------------------------------
-// 1. Colección: clientes
-// Basado en src/models/cliente.py
-// ----------------------------------------------------------------------------
 print("Creando colección 'clientes' con validación de esquema...");
 db.createCollection("clientes", {
    validator: {
@@ -54,14 +36,11 @@ db.createCollection("clientes", {
    validationAction: "error"
 });
 
-// Índices para clientes
+
 db.clientes.createIndex({ "rut": 1 }, { unique: true, name: "idx_rut_unique" });
 db.clientes.createIndex({ "email": 1 }, { unique: true, name: "idx_email_unique" });
 
-// ----------------------------------------------------------------------------
-// 2. Colección: productos
-// Basado en src/models/producto.py
-// ----------------------------------------------------------------------------
+
 print("Creando colección 'productos' con validación de esquema...");
 db.createCollection("productos", {
    validator: {
@@ -94,14 +73,10 @@ db.createCollection("productos", {
    validationAction: "error"
 });
 
-// Índices para productos
+
 db.productos.createIndex({ "nombre": 1 }, { name: "idx_nombre" });
 db.productos.createIndex({ "stock": 1 }, { name: "idx_stock" });
 
-// ----------------------------------------------------------------------------
-// 3. Colección: pedidos
-// Basado en src/models/pedido.py
-// ----------------------------------------------------------------------------
 print("Creando colección 'pedidos' con validación de esquema...");
 db.createCollection("pedidos", {
    validator: {
