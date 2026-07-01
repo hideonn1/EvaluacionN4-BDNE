@@ -61,6 +61,26 @@ class RepositorioProductos(RepositorioBase):
     def listar_todos(self) -> list:
         return self.buscar_todos()
 
+    def buscar_por_id(self, id_producto: str) -> Optional[dict]:
+        if not ObjectId.is_valid(id_producto):
+            print(
+                f"[Validación] El ID '{id_producto}' no tiene un formato NoSQL válido."
+            )
+            return None
+        return self.buscar_uno({"_id": ObjectId(id_producto)})
+
+    def incrementar_stock(self, id_producto: str, cantidad: int) -> bool:
+        if not ObjectId.is_valid(id_producto):
+            return False
+        try:
+            resultado = self._coleccion.update_one(
+                {"_id": ObjectId(id_producto)}, {"$inc": {"stock": cantidad}}
+            )
+            return resultado.modified_count > 0
+        except PyMongoError as e:
+            print(f"[Error] No se pudo revertir stock del producto {id_producto}: {e}")
+            return False
+
     def descontar_stock(self, id_producto: str, cantidad: int) -> bool:
         if not ObjectId.is_valid(id_producto):
             print(
