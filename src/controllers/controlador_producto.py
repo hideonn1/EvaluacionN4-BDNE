@@ -4,23 +4,40 @@ from views.vista_producto import VistaProducto
 
 class ControladorProducto:
     # Maneja el submenú y las acciones CRUD de productos.
-    def __init__(self, db):
+    def __init__(self, db, rol: str):
         self._repositorio = RepositorioProductos(db)
         self._vista = VistaProducto()
+        self._rol = rol
 
     def ejecutar(self) -> None:
-        acciones = {
-            "1": self._registrar,
-            "2": self._listar_en_stock,
-            "3": self._eliminar,
-        }
+        acciones = {}
+        opciones = {}
+        
+        if self._rol in ["1", "2"]:
+            acciones["1"] = self._registrar
+            opciones["1"] = "Registrar producto"
+            
+        if self._rol in ["1", "2", "3"]:
+            acciones["2"] = self._listar_en_stock
+            opciones["2"] = "Listar productos en stock"
+            
+        if self._rol in ["1", "2"]:
+            acciones["3"] = self._eliminar
+            opciones["3"] = "Eliminar producto"
+            
+        opciones["0"] = "Volver"
+        
         while True:
-            opcion = self._vista.menu()
+            self._vista.mostrar_titulo("GESTIÓN DE PRODUCTOS")
+            opcion = self._vista.pedir_opcion(opciones)
             if opcion == "0":
                 return
             accion = acciones.get(opcion)
             if accion:
-                accion()
+                try:
+                    accion()
+                except KeyboardInterrupt:
+                    self._vista.mostrar_error("\nOperación cancelada por el usuario.")
             else:
                 self._vista.mostrar_error("Opción inválida.")
 

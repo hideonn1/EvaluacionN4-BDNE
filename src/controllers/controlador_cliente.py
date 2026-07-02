@@ -5,24 +5,42 @@ from views.vista_cliente import VistaCliente
 class ControladorCliente:
     # Maneja el submenú y las acciones CRUD de clientes.
 
-    def __init__(self, db):
+    def __init__(self, db, rol: str):
         self._repositorio = RepositorioClientes(db)
         self._vista = VistaCliente()
+        self._rol = rol
 
     def ejecutar(self) -> None:
-        acciones = {
-            "1": self._registrar,
-            "2": self._buscar,
-            "3": self._listar,
-            "4": self._eliminar,
-        }
+        acciones = {}
+        opciones = {}
+        
+        if self._rol in ["1", "2"]:
+            acciones["1"] = self._registrar
+            opciones["1"] = "Registrar cliente"
+            
+        if self._rol in ["1", "2", "3"]:
+            acciones["2"] = self._buscar
+            opciones["2"] = "Buscar cliente por RUT"
+            acciones["3"] = self._listar
+            opciones["3"] = "Listar clientes"
+            
+        if self._rol in ["1", "2"]:
+            acciones["4"] = self._eliminar
+            opciones["4"] = "Eliminar cliente"
+            
+        opciones["0"] = "Volver"
+        
         while True:
-            opcion = self._vista.menu()
+            self._vista.mostrar_titulo("GESTIÓN DE CLIENTES")
+            opcion = self._vista.pedir_opcion(opciones)
             if opcion == "0":
                 return
             accion = acciones.get(opcion)
             if accion:
-                accion()
+                try:
+                    accion()
+                except KeyboardInterrupt:
+                    self._vista.mostrar_error("\nOperación cancelada por el usuario.")
             else:
                 self._vista.mostrar_error("Opción inválida.")
 

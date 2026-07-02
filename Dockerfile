@@ -2,7 +2,7 @@ FROM mongo:7.0
 
 COPY mongod.conf /etc/mongod.conf
 
-COPY init-mongo.js /docker-entrypoint-initdb.d/
+COPY /src/scripts/init-mongo.js /docker-entrypoint-initdb.d/
 
 EXPOSE 27017
 

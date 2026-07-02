@@ -8,28 +8,47 @@ from views.vista_producto import VistaProducto
 class ControladorPedido:
     # Maneja el submenú y las acciones CRUD de pedidos.
 
-    def __init__(self, db):
+    def __init__(self, db, rol: str):
         self._repositorio = RepositorioPedidos(db)
         self._repo_clientes = RepositorioClientes(db)
         self._repo_productos = RepositorioProductos(db)
         self._vista = VistaPedido()
         self._vista_producto = VistaProducto()
+        self._rol = rol
 
     def ejecutar(self) -> None:
-        acciones = {
-            "1": self._crear,
-            "2": self._listar_activos,
-            "3": self._listar_todos,
-            "4": self._cambiar_estado,
-            "5": self._eliminar,
-        }
+        acciones = {}
+        opciones = {}
+        
+        if self._rol in ["1", "2"]:
+            acciones["1"] = self._crear
+            opciones["1"] = "Crear pedido"
+            
+        if self._rol in ["1", "2", "3"]:
+            acciones["2"] = self._listar_activos
+            opciones["2"] = "Listar pedidos activos"
+            acciones["3"] = self._listar_todos
+            opciones["3"] = "Listar todos los pedidos"
+            
+        if self._rol in ["1", "2"]:
+            acciones["4"] = self._cambiar_estado
+            opciones["4"] = "Cambiar estado de un pedido"
+            acciones["5"] = self._eliminar
+            opciones["5"] = "Eliminar pedido"
+            
+        opciones["0"] = "Volver"
+        
         while True:
-            opcion = self._vista.menu()
+            self._vista.mostrar_titulo("GESTIÓN DE PEDIDOS")
+            opcion = self._vista.pedir_opcion(opciones)
             if opcion == "0":
                 return
             accion = acciones.get(opcion)
             if accion:
-                accion()
+                try:
+                    accion()
+                except KeyboardInterrupt:
+                    self._vista.mostrar_error("\nOperación cancelada por el usuario.")
             else:
                 self._vista.mostrar_error("Opción inválida.")
 
@@ -65,41 +84,57 @@ class ControladorPedido:
     def _armar_items(self) -> list:
         """Bucle interactivo: selecciona productos, valida stock y lo descuenta."""
         items: list[ItemPedido] = []
-        while True:
-            self._vista_producto.mostrar_lista_productos(
-                self._repo_productos.listar_disponibles()
-            )
-            id_producto = self._vista.solicitar_id_producto_para_item()
-            if not id_producto:
-                break
-
-            producto = self._repo_productos.buscar_por_id(id_producto)
-            if not producto:
-                self._vista.mostrar_error("Producto no encontrado.")
-                continue
-
-            cantidad = self._vista.solicitar_cantidad()
-            if cantidad <= 0:
-                self._vista.mostrar_error("La cantidad debe ser mayor a 0.")
-                continue
-
-            if not self._repo_productos.descontar_stock(id_producto, cantidad):
-                self._vista.mostrar_error("Stock insuficiente para esa cantidad.")
-                continue
-
-            items.append(
-                ItemPedido(
-                    producto_id=id_producto,
-                    nombre_producto=producto["nombre"],
-                    cantidad=cantidad,
-                    precio_unitario=producto["precio"],
+        try:
+            while True:
+                self._vista_producto.mostrar_lista_productos(
+                    self._repo_productos.listar_disponibles()
                 )
-            )
-            self._vista.mostrar_mensaje(f"Agregado: {cantidad}x {producto['nombre']}.")
+                id_producto = self._vista.solicitar_id_producto_para_item()
+                if not id_producto:
+                    break
 
-            if not self._vista.confirmar("¿Agregar otro producto?"):
-                break
-        return items
+                producto = self._repo_productos.buscar_por_id(id_producto)
+                if not producto:
+                    self._vista.mostrar_error("Producto no encontrado.")
+                    continue
+
+                cantidad = self._vista.solicitar_cantidad()
+                if cantidad <= 0:
+                    self._vista.mostrar_error("La cantidad debe ser mayor a 0.")
+                    continue
+
+                stock_actual = producto.get("stock", 0)
+                if cantidad > stock_actual:
+                    mensaje = (
+                        f"Solo quedan {stock_actual} y escogió {cantidad}, si acepta se "
+                        f"incluirán todo el stock, en caso contrario se revertirá esta acción"
+                    )
+                    if self._vista.confirmar(mensaje):
+                        cantidad = stock_actual
+                    else:
+                        self._vista.mostrar_error("Operación revertida.")
+                        continue
+
+                if not self._repo_productos.descontar_stock(id_producto, cantidad):
+                    self._vista.mostrar_error("Stock insuficiente para esa cantidad.")
+                    continue
+
+                items.append(
+                    ItemPedido(
+                        producto_id=id_producto,
+                        nombre_producto=producto["nombre"],
+                        cantidad=cantidad,
+                        precio_unitario=producto["precio"],
+                    )
+                )
+                self._vista.mostrar_mensaje(f"Agregado: {cantidad}x {producto['nombre']}.")
+
+                if not self._vista.confirmar("¿Agregar otro producto?"):
+                    break
+            return items
+        except KeyboardInterrupt:
+            self._revertir_descuentos(items)
+            raise
 
     def _revertir_descuentos(self, items: list) -> None:
         """Devuelve el stock descontado cuando la creación del pedido falla."""

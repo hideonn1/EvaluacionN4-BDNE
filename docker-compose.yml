@@ -19,6 +19,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+      APP_USERNAME: ${APP_USERNAME}
+      APP_PASSWORD: ${APP_PASSWORD}
+      AUDITOR_USERNAME: ${AUDITOR_USERNAME}
+      AUDITOR_PASSWORD: ${AUDITOR_PASSWORD}
+      MONITOR_USERNAME: ${MONITOR_USERNAME}
+      MONITOR_PASSWORD: ${MONITOR_PASSWORD}
 
     ports:
       - "27018:27017"
@@ -28,7 +34,7 @@ services:
 
     volumes:
       - mongo_data:/data/db
-      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./src/scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
 
     deploy:
       resources:
@@ -85,9 +91,18 @@ services:
       - .:/workspace
     working_dir: /workspace
     environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      MONGO_HOST: mongodb
+      MONGO_PORT: "27017"
       MONGO_DATABASE: ${MONGO_DATABASE}
-    # agregamos manejo de señales TTY para mantener el contenedor intercativo si es necsario
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      APP_USERNAME: ${APP_USERNAME}
+      APP_PASSWORD: ${APP_PASSWORD}
+      AUDITOR_USERNAME: ${AUDITOR_USERNAME}
+      AUDITOR_PASSWORD: ${AUDITOR_PASSWORD}
+      MONITOR_USERNAME: ${MONITOR_USERNAME}
+      MONITOR_PASSWORD: ${MONITOR_PASSWORD}
+    # agregamos manejo de señales TTY para mantener el contenedor interactivo si es necesario
     stdin_open: true
     tty: true
     command: ["python", "src/main.py"]
