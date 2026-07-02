@@ -30,16 +30,20 @@ class ControladorPrincipal:
         opciones = {}
 
         if self._rol in ["1", "2", "3"]:
-            acciones.update({
-                "1": self._controlador_cliente.ejecutar,
-                "2": self._controlador_producto.ejecutar,
-                "3": self._controlador_pedido.ejecutar,
-            })
-            opciones.update({
-                "1": "Gestión de clientes",
-                "2": "Gestión de productos",
-                "3": "Gestión de pedidos",
-            })
+            acciones.update(
+                {
+                    "1": self._controlador_cliente.ejecutar,
+                    "2": self._controlador_producto.ejecutar,
+                    "3": self._controlador_pedido.ejecutar,
+                }
+            )
+            opciones.update(
+                {
+                    "1": "Gestión de clientes",
+                    "2": "Gestión de productos",
+                    "3": "Gestión de pedidos",
+                }
+            )
 
         if self._rol in ["1", "4"]:
             acciones["4"] = self._mostrar_estado_servidor

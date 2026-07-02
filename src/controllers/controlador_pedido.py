@@ -127,7 +127,9 @@ class ControladorPedido:
                         precio_unitario=producto["precio"],
                     )
                 )
-                self._vista.mostrar_mensaje(f"Agregado: {cantidad}x {producto['nombre']}.")
+                self._vista.mostrar_mensaje(
+                    f"Agregado: {cantidad}x {producto['nombre']}."
+                )
 
                 if not self._vista.confirmar("¿Agregar otro producto?"):
                     break
