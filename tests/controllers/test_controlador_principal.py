@@ -16,7 +16,7 @@ def controlador(mock_db, mocker):
     mocker.patch("controllers.controlador_principal.ControladorCliente")
     mocker.patch("controllers.controlador_principal.ControladorProducto")
     mocker.patch("controllers.controlador_principal.ControladorPedido")
-    return ControladorPrincipal(mock_db)
+    return ControladorPrincipal(mock_db, "1")
 
 
 def test_ejecutar_opcion_salir(controlador):
