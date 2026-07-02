@@ -19,25 +19,25 @@ class ControladorPedido:
     def ejecutar(self) -> None:
         acciones = {}
         opciones = {}
-        
+
         if self._rol in ["1", "2"]:
             acciones["1"] = self._crear
             opciones["1"] = "Crear pedido"
-            
+
         if self._rol in ["1", "2", "3"]:
             acciones["2"] = self._listar_activos
             opciones["2"] = "Listar pedidos activos"
             acciones["3"] = self._listar_todos
             opciones["3"] = "Listar todos los pedidos"
-            
+
         if self._rol in ["1", "2"]:
             acciones["4"] = self._cambiar_estado
             opciones["4"] = "Cambiar estado de un pedido"
             acciones["5"] = self._eliminar
             opciones["5"] = "Eliminar pedido"
-            
+
         opciones["0"] = "Volver"
-        
+
         while True:
             self._vista.mostrar_titulo("GESTIÓN DE PEDIDOS")
             opcion = self._vista.pedir_opcion(opciones)

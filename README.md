@@ -32,15 +32,19 @@ solución de persistencia NoSQL para un caso de negocio, cubriendo:
    por usuario/contraseña, restricciones de red, límites de recursos
    y buenas prácticas de hardening (ver `mongod.conf` y
    `docker-compose.yml`).
-4. **Diseño del modelo de datos NoSQL**: colecciones `clientes`,
+4. **Seguridad y Control de Acceso Basado en Roles (RBAC)**: Creación
+   de múltiples roles en MongoDB (`admin`, `readWrite`, `read`, `clusterMonitor`)
+   y autenticación en la aplicación. Los menús de la CLI se ajustan 
+   dinámicamente protegiendo las rutas según el rol.
+5. **Diseño del modelo de datos NoSQL**: colecciones `clientes`,
    `productos` y `pedidos`, con subdocumentos embebidos para los
    ítems de cada pedido, validación de esquema (`$jsonSchema`) e
    índices (ver `scripts/init-mongo.js`).
-5. **Desarrollo de la capa de aplicación**: conexión segura al motor
-   de base de datos, y funciones CRUD completas sobre las tres
-   colecciones, implementadas en Python con PyMongo, organizadas en
-   una arquitectura **Modelo-Vista-Controlador** para separar la
-   persistencia, la interfaz de consola y la lógica de negocio.
+6. **Desarrollo de la capa de aplicación**: conexión segura al motor
+   de base de datos, funciones CRUD organizadas en
+   una arquitectura **Modelo-Vista-Controlador**. Incluye manejo
+   robusto de interrupciones del teclado (`CTRL + C`) y validaciones 
+   interactivas de stock.
 
 ## Arquitectura
 
@@ -100,6 +104,12 @@ solución de persistencia NoSQL para un caso de negocio, cubriendo:
   MONGO_ROOT_USERNAME=tu_usuario
   MONGO_ROOT_PASSWORD=tu_password_segura
   MONGO_DATABASE=comerciotech_db
+  APP_USERNAME=app_user
+  APP_PASSWORD=app_pass_123
+  AUDITOR_USERNAME=auditor_user
+  AUDITOR_PASSWORD=auditor_pass_123
+  MONITOR_USERNAME=monitor_user
+  MONITOR_PASSWORD=monitor_pass_123
   ```
 
   > ⚠️ Evita caracteres reservados de URI (`$ ? @ : / # & +`) en la
@@ -126,8 +136,11 @@ Esto crea:
 docker compose run --rm app python src/main.py
 ```
 
-Muestra el menú principal (Clientes / Productos / Pedidos) por
-consola, operando directamente sobre la base de datos del contenedor.
+Muestra un login inicial por consola. Una vez autenticado, despliega 
+el menú principal (Clientes / Productos / Pedidos / Estado del servidor) 
+operando sobre la base de datos y mostrando opciones dinámicamente 
+según los privilegios de tu rol. Si deseas abortar cualquier formulario 
+o acción, puedes usar `CTRL + C` para volver al menú de forma segura.
 
 ## Cómo correr el smoke-test (usado por el pipeline de CI/CD)
 

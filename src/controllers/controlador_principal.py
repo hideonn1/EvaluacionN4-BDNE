@@ -28,7 +28,7 @@ class ControladorPrincipal:
     def ejecutar(self) -> None:
         acciones = {}
         opciones = {}
-        
+
         if self._rol in ["1", "2", "3"]:
             acciones.update({
                 "1": self._controlador_cliente.ejecutar,
@@ -40,11 +40,11 @@ class ControladorPrincipal:
                 "2": "Gestión de productos",
                 "3": "Gestión de pedidos",
             })
-            
+
         if self._rol in ["1", "4"]:
             acciones["4"] = self._mostrar_estado_servidor
             opciones["4"] = "Ver estado del servidor MongoDB"
-            
+
         opciones["0"] = "Salir"
         while True:
             self._vista.mostrar_titulo("SISTEMA COMERCIOTECH")

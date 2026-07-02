@@ -12,21 +12,21 @@ class ControladorProducto:
     def ejecutar(self) -> None:
         acciones = {}
         opciones = {}
-        
+
         if self._rol in ["1", "2"]:
             acciones["1"] = self._registrar
             opciones["1"] = "Registrar producto"
-            
+
         if self._rol in ["1", "2", "3"]:
             acciones["2"] = self._listar_en_stock
             opciones["2"] = "Listar productos en stock"
-            
+
         if self._rol in ["1", "2"]:
             acciones["3"] = self._eliminar
             opciones["3"] = "Eliminar producto"
-            
+
         opciones["0"] = "Volver"
-        
+
         while True:
             self._vista.mostrar_titulo("GESTIÓN DE PRODUCTOS")
             opcion = self._vista.pedir_opcion(opciones)

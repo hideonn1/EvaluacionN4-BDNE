@@ -13,23 +13,23 @@ class ControladorCliente:
     def ejecutar(self) -> None:
         acciones = {}
         opciones = {}
-        
+
         if self._rol in ["1", "2"]:
             acciones["1"] = self._registrar
             opciones["1"] = "Registrar cliente"
-            
+
         if self._rol in ["1", "2", "3"]:
             acciones["2"] = self._buscar
             opciones["2"] = "Buscar cliente por RUT"
             acciones["3"] = self._listar
             opciones["3"] = "Listar clientes"
-            
+
         if self._rol in ["1", "2"]:
             acciones["4"] = self._eliminar
             opciones["4"] = "Eliminar cliente"
-            
+
         opciones["0"] = "Volver"
-        
+
         while True:
             self._vista.mostrar_titulo("GESTIÓN DE CLIENTES")
             opcion = self._vista.pedir_opcion(opciones)
