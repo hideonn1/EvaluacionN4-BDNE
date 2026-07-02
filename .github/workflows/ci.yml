@@ -2,9 +2,9 @@ name: CI/CD Pipeline - Pruebas y QA
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop-pedro" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop-pedro" ]
 
 jobs:
   build-and-test:

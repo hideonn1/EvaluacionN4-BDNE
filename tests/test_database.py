@@ -1,9 +1,10 @@
 import os
 from unittest.mock import MagicMock
 
-import database
 import pytest
 from pymongo.errors import ConnectionFailure
+
+import database
 
 
 @pytest.fixture(autouse=True)
