@@ -50,28 +50,33 @@ jobs:
       - name: Construir imagen de MongoDB
         run: docker build -t comerciotech-mongodb:${{ github.sha }} -f Dockerfile .
 
-      - name: Escanear imagen de la app
+      # Imagen propia: control total sobre las dependencias -> bloquea el pipeline
+      - name: Escanear imagen de la app (BLOQUEANTE)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: "comerciotech-app:${{ github.sha }}"
           format: "table"
-          exit-code: "0"
+          exit-code: "1"
           severity: "HIGH,CRITICAL"
 
-      - name: Escanear imagen de MongoDB
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "comerciotech-mongodb:${{ github.sha }}"
-          format: "table"
-          exit-code: "1" # nota para compañeros: cambiar a 0 el exit-code por si encuentra una vulnerabilidad relacionada a mongo o python que no se pueda reparar
-          severity: "HIGH,CRITICAL"
-          trivyignores: ".trivyignore" # solo para incluir dependencias que trackea Trivy pero realmente no se están utilizando. Mayor información consultar a '.trivyignore'
-
-      - name: Escanear dependencias Python (requirements.txt)
+      # Dependencias Python declaradas por nosotros -> bloquea el pipeline
+      - name: Escanear dependencias Python (BLOQUEANTE)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           scan-ref: "."
           format: "table"
+          exit-code: "1"
+          severity: "HIGH,CRITICAL"
+
+      # Imagen oficial de terceros (mongo:7.0.21): no controlamos sus binarios
+      # internos -> solo reporta, no bloquea. CVEs evaluadas y documentadas
+      # en .trivyignore para las que no son explotables en nuestro uso.
+      - name: Escanear imagen de MongoDB (INFORMATIVO)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "comerciotech-mongodb:${{ github.sha }}"
+          format: "table"
           exit-code: "0"
           severity: "HIGH,CRITICAL"
+          trivyignores: ".trivyignore"
