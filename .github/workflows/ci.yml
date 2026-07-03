@@ -65,6 +65,7 @@ jobs:
           format: "table"
           exit-code: "1" # nota para compañeros: cambiar a 0 el exit-code por si encuentra una vulnerabilidad relacionada a mongo o python que no se pueda reparar
           severity: "HIGH,CRITICAL"
+          trivyignores: ".trivyignore" # solo para incluir dependencias que trackea Trivy pero realmente no se están utilizando. Mayor información consultar a '.trivyignore'
 
       - name: Escanear dependencias Python (requirements.txt)
         uses: aquasecurity/trivy-action@master
