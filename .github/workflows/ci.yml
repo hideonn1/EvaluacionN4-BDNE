@@ -1,40 +1,89 @@
 name: CI/CD Pipeline - Pruebas y QA
-
 on:
   push:
-    branches: [ "main", "master", "develop-pedro" ]
+    branches: ["main", "master", "develop-pedro"]
   pull_request:
-    branches: [ "main", "master", "develop-pedro" ]
-
+    branches: ["main", "master", "develop-pedro"]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout del código
-      uses: actions/checkout@v4
-    
-    - name: Configurar Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        cache: "pip"
-        
-    - name: Instalar dependencias
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        
-    - name: Revisión de estilo con flake8
-      run: |
-        flake8 src tests
-        
-    - name: Verificación de formateo con black e isort
-      run: |
-        black --check src tests
-        isort --check-only src tests
-        
-    - name: Ejecutar pruebas unitarias (pytest)
-      run: |
-        pytest --cov=src tests/
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Revisión de estilo con flake8
+        run: |
+          flake8 src tests
+      - name: Verificación de formateo con black e isort
+        run: |
+          black --check src tests
+          isort --check-only src tests
+      - name: Ejecutar pruebas unitarias (pytest)
+        run: |
+          pytest --cov=src tests/
+  security-scan:
+    name: Auditoría de vulnerabilidades (Trivy)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+      - name: Construir imagen de la app
+        run: docker build -t comerciotech-app:${{ github.sha }} -f Dockerfile.app .
+      - name: Construir imagen de MongoDB
+        run: docker build -t comerciotech-mongodb:${{ github.sha }} -f Dockerfile .
+
+      # Dependencias Python declaradas por nosotros -> bloquea el pipeline
+      - name: Escanear dependencias Python (BLOQUEANTE)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          exit-code: "1"
+          severity: "HIGH,CRITICAL"
+
+      # Imagen propia: control total sobre nuestras dependencias Python.
+      # vuln-type: library evita reportar CVEs de la capa OS heredada de
+      # python:3.11-slim (sin parche disponible aún en Debian), que se
+      # trata por separado más abajo, igual que la imagen de Mongo.
+      - name: Escanear imagen de la app - librerías (BLOQUEANTE)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "comerciotech-app:${{ github.sha }}"
+          format: "table"
+          exit-code: "1"
+          severity: "HIGH,CRITICAL"
+          vuln-type: "library"
+
+      # Capa del sistema operativo heredada de python:3.11-slim: no
+      # controlamos el ciclo de parcheo de Debian -> solo reporta.
+      - name: Escanear imagen de la app - SO base (INFORMATIVO)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "comerciotech-app:${{ github.sha }}"
+          format: "table"
+          exit-code: "0"
+          severity: "HIGH,CRITICAL"
+          vuln-type: "os"
+
+      # Imagen oficial de terceros (mongo:7.0.21): no controlamos sus binarios
+      # internos -> solo reporta, no bloquea. CVEs evaluadas y documentadas
+      # en .trivyignore para las que no son explotables en nuestro uso.
+      - name: Escanear imagen de MongoDB (INFORMATIVO)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "comerciotech-mongodb:${{ github.sha }}"
+          format: "table"
+          exit-code: "0"
+          severity: "HIGH,CRITICAL"
+          trivyignores: ".trivyignore"
