@@ -1,0 +1,39 @@
+erDiagram
+    clientes {
+        ObjectId _id PK "Auto-generated"
+        string rut "PK / Unique / Format: ^\\d{7,8}-[\\dkK]$"
+        string nombre "Required"
+        string email "Unique / Format: email"
+        string telefono "Optional / Nullable"
+        string direccion "Optional / Nullable"
+    }
+
+    productos {
+        ObjectId _id PK "Auto-generated"
+        string nombre "Required / Indexed"
+        double precio "Required / > 0"
+        int stock "Required / >= 0 / Indexed"
+        string categoria "Optional / Nullable"
+    }
+
+    pedidos {
+        ObjectId _id PK "Auto-generated"
+        string codigo_pedido "Unique / Indexed"
+        string rut_cliente FK "References clientes(rut) / Indexed"
+        array items "Embedded list of ItemPedido / Required"
+        double total "Required / >= 0"
+        string estado "Enum: pendiente|procesando|enviado|entregado|cancelado / Indexed"
+        date fecha_creacion "Required"
+    }
+
+    ItemPedido {
+        string producto_id FK "References productos(_id)"
+        string nombre_producto "Required (Denormalized)"
+        int cantidad "Required / >= 1"
+        double precio_unitario "Required / >= 0 (Denormalized)"
+        double subtotal "Required / >= 0 (cantidad * precio_unitario)"
+    }
+
+    clientes ||--o{ pedidos : "places (Referenced by rut_cliente)"
+    pedidos ||--|{ ItemPedido : "contains (Embedded in items)"
+    productos ||--o{ ItemPedido : "referenced_in (Referenced by producto_id)"

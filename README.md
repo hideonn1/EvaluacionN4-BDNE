@@ -60,6 +60,7 @@ solución de persistencia NoSQL para un caso de negocio, cubriendo:
 ├── pytest.ini               # Configuración para pytest
 ├── .env.example             # Plantilla de variables de entorno (copiar a .env)
 ├── diagrama_clases.puml     # Diagrama de clases del sistema en PlantUML
+├── diagrama_nosql.mmd       # Diagrama NoSQL del sistema en Mermaid
 ├── src/
 │   ├── main.py              # Punto de entrada (modo interactivo y --test-mode)
 │   ├── database.py          # Conexión a MongoDB (Singleton + pool de conexiones)
