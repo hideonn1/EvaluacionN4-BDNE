@@ -50,32 +50,43 @@ solución de persistencia NoSQL para un caso de negocio, cubriendo:
 
 ```
 .
-├── Dockerfile              # Imagen de MongoDB (config + script de inicialización)
-├── Dockerfile.app          # Imagen de la aplicación Python (dependencias precompiladas)
-├── docker-compose.yml      # Orquesta los servicios mongodb y app
-├── mongod.conf             # Configuración del servidor MongoDB
-├── requirements.txt        # Dependencias Python (pymongo, python-dotenv, flake8)
-├── .env.example            # Plantilla de variables de entorno (copiar a .env)
-├── scripts/
-│   └── init-mongo.js       # Crea colecciones con validación de esquema + índices
-└── src/
-    ├── main.py             # Punto de entrada (modo interactivo y --test-mode)
-    ├── database.py         # Conexión a MongoDB (Singleton + pool de conexiones)
-    ├── models/              # CAPA MODELO
-    │   ├── base_model.py    #   RepositorioBase (ABC): CRUD genérico + manejo de errores
-    │   ├── cliente.py        #   Cliente (entidad) + RepositorioClientes
-    │   ├── producto.py       #   Producto (entidad) + RepositorioProductos
-    │   └── pedido.py         #   Pedido + ItemPedido (subdocumento) + RepositorioPedidos
-    ├── views/                # CAPA VISTA
-    │   ├── vista_base.py     #   Utilidades de entrada/salida por consola
-    │   ├── vista_cliente.py
-    │   ├── vista_producto.py
-    │   └── vista_pedido.py
-    └── controllers/          # CAPA CONTROLADOR
-        ├── controlador_cliente.py
-        ├── controlador_producto.py
-        ├── controlador_pedido.py    # Crea pedidos: valida cliente y descuenta stock
-        └── controlador_principal.py # Menú general (compone los 3 controladores)
+├── Dockerfile               # Imagen de MongoDB (config + copia del script de inicialización)
+├── Dockerfile.app           # Imagen de la aplicación Python (dependencias precompiladas)
+├── docker-compose.yml       # Orquesta los servicios mongodb y app
+├── mongod.conf              # Configuración del servidor MongoDB
+├── requirements.txt         # Dependencias Python (pymongo, python-dotenv)
+├── requirements-dev.txt     # Dependencias de desarrollo y pruebas (pytest, flake8)
+├── pyproject.toml           # Configuración del proyecto Python
+├── pytest.ini               # Configuración para pytest
+├── .env.example             # Plantilla de variables de entorno (copiar a .env)
+├── diagrama_clases.puml     # Diagrama de clases del sistema en PlantUML
+├── src/
+│   ├── main.py              # Punto de entrada (modo interactivo y --test-mode)
+│   ├── database.py          # Conexión a MongoDB (Singleton + pool de conexiones)
+│   ├── controllers/         # CAPA CONTROLADOR
+│   │   ├── controlador_cliente.py
+│   │   ├── controlador_pedido.py    # Crea pedidos: valida cliente y descuenta stock
+│   │   ├── controlador_principal.py # Menú general (compone los 3 controladores)
+│   │   └── controlador_producto.py
+│   ├── models/              # CAPA MODELO
+│   │   ├── base_model.py    # RepositorioBase (ABC): CRUD genérico + manejo de errores
+│   │   ├── cliente.py       # Cliente (entidad) + RepositorioClientes
+│   │   ├── pedido.py        # Pedido + ItemPedido (subdocumento) + RepositorioPedidos
+│   │   └── producto.py      # Producto (entidad) + RepositorioProductos
+│   ├── scripts/             # SCRIPTS DE BASE DE DATOS
+│   │   └── init-mongo.js    # Crea colecciones con validación de esquema + índices
+│   └── views/               # CAPA VISTA
+│       ├── vista_base.py    # Utilidades de entrada/salida por consola
+│       ├── vista_cliente.py
+│       ├── vista_pedido.py
+│       └── vista_producto.py
+└── tests/                   # CAPA DE PRUEBAS UNITARIAS Y DE INTEGRACIÓN
+    ├── conftest.py          # Configuración y fixtures de pytest
+    ├── test_database.py     # Pruebas para la conexión a la base de datos
+    ├── controllers/
+    │   └── test_controlador_principal.py # Pruebas del controlador principal
+    └── models/
+        └── test_producto.py # Pruebas unitarias para el modelo de productos
 ```
 
 - **Modelo**: cada colección tiene una entidad (`@dataclass`) y un
