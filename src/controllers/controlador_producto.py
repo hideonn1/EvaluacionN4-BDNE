@@ -68,9 +68,7 @@ class ControladorProducto:
         id_producto = self._vista.solicitar_id()
         producto_actual = self._repositorio.buscar_por_id(id_producto)
         if not producto_actual:
-            self._vista.mostrar_error(
-                "No se encontró ningún producto con ese ID."
-            )
+            self._vista.mostrar_error("No se encontró ningún producto con ese ID.")
             return
 
         self._vista.mostrar_titulo("DATOS ACTUALES DEL PRODUCTO")
