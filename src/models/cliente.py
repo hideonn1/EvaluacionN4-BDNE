@@ -25,7 +25,6 @@ class Cliente:
 
     @staticmethod
     def desde_documento(doc: dict) -> "Cliente":
-        """Reconstruye una entidad Cliente a partir de un documento de MongoDB."""
         return Cliente(
             rut=doc.get("rut", ""),
             nombre=doc.get("nombre", ""),
@@ -39,6 +38,7 @@ class Cliente:
 class RepositorioClientes(RepositorioBase):
     PATRON_RUT = re.compile(r"^\d{7,8}-[\dkK]$")
     PATRON_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    PATRON_TELEFONO = re.compile(r"^\+?[\d\s\(\)\-]{7,20}$")
 
     def __init__(self, db):
         super().__init__(db, "clientes")
@@ -46,6 +46,7 @@ class RepositorioClientes(RepositorioBase):
     def validar(self, datos: dict) -> bool:
         rut = datos.get("rut", "")
         email = datos.get("email", "")
+        telefono = datos.get("telefono")
         if not datos.get("nombre"):
             print("[Validación] El nombre del cliente es obligatorio.")
             return False
@@ -53,6 +54,12 @@ class RepositorioClientes(RepositorioBase):
             return False
         if not self.PATRON_EMAIL.match(email):
             print(f"[Validación] Email '{email}' no tiene un formato válido.")
+            return False
+        if telefono and not self.PATRON_TELEFONO.match(telefono):
+            print(
+                f"[Validación] Teléfono '{telefono}' no es válido. "
+                "Use solo dígitos, espacios, guíones o +."
+            )
             return False
         return True
 

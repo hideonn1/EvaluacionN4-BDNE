@@ -4,6 +4,11 @@ class VistaBase:
         print(f"[+] {mensaje}")
 
     @staticmethod
+    def mostrar_baja(mensaje: str) -> None:
+        """Indica visualmente una operación de eliminación exitosa con [-]."""
+        print(f"[-] {mensaje}")
+
+    @staticmethod
     def mostrar_error(mensaje: str) -> None:
         print(f"[-] {mensaje}")
 

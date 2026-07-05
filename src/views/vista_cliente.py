@@ -42,3 +42,31 @@ class VistaCliente(VistaBase):
             return
         for c in clientes:
             print(f"  - {c.get('rut')} | {c.get('nombre')} | {c.get('email')}")
+
+    def solicitar_datos_modificacion(self, cliente_actual: dict) -> dict:
+        print("\n  (Presione Enter para mantener el valor actual)")
+        campos = {}
+
+        nuevo_nombre = self.pedir_texto(
+            f"Nombre completo [{cliente_actual.get('nombre')}]"
+        )
+        if nuevo_nombre:
+            campos["nombre"] = nuevo_nombre
+
+        nuevo_email = self.pedir_texto(f"Email [{cliente_actual.get('email')}]")
+        if nuevo_email:
+            campos["email"] = nuevo_email
+
+        nuevo_telefono = input(
+            f"Teléfono [{cliente_actual.get('telefono') or '-'}]: "
+        ).strip()
+        if nuevo_telefono:
+            campos["telefono"] = nuevo_telefono
+
+        nueva_direccion = input(
+            f"Dirección [{cliente_actual.get('direccion') or '-'}]: "
+        ).strip()
+        if nueva_direccion:
+            campos["direccion"] = nueva_direccion
+
+        return campos
