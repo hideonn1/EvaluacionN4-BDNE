@@ -106,3 +106,12 @@ class RepositorioProductos(RepositorioBase):
             )
             return False
         return self.eliminar_uno({"_id": ObjectId(id_producto_str)})
+
+    def actualizar_por_id(self, id_producto_str: str, cambios: dict) -> bool:
+        """Actualiza campos del producto. No permite modificar _id."""
+        if not ObjectId.is_valid(id_producto_str):
+            print(
+                f"[Validación] El ID '{id_producto_str}' no tiene un formato NoSQL válido."
+            )
+            return False
+        return self.actualizar_uno({"_id": ObjectId(id_producto_str)}, cambios)
