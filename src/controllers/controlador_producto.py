@@ -24,6 +24,8 @@ class ControladorProducto:
         if self._rol in ["1", "2"]:
             acciones["3"] = self._eliminar
             opciones["3"] = "Eliminar producto"
+            acciones["4"] = self._modificar
+            opciones["4"] = "Modificar producto"
 
         opciones["0"] = "Volver"
 
@@ -55,8 +57,47 @@ class ControladorProducto:
     def _eliminar(self) -> None:
         id_producto = self._vista.solicitar_id()
         if self._repositorio.eliminar_por_id(id_producto):
-            self._vista.mostrar_mensaje("Producto eliminado.")
+            self._vista.mostrar_baja("Producto eliminado.")
         else:
             self._vista.mostrar_error(
                 "No se encontró el producto o no se pudo eliminar."
             )
+
+    def _modificar(self) -> None:
+        """Permite modificar los datos de un producto existente (excepto _id)."""
+        id_producto = self._vista.solicitar_id()
+        producto_actual = self._repositorio.buscar_por_id(id_producto)
+        if not producto_actual:
+            self._vista.mostrar_error(
+                "No se encontró ningún producto con ese ID."
+            )
+            return
+
+        self._vista.mostrar_titulo("DATOS ACTUALES DEL PRODUCTO")
+        self._vista.mostrar_producto(producto_actual)
+
+        cambios = self._vista.solicitar_datos_modificacion_producto(producto_actual)
+
+        if not cambios:
+            self._vista.mostrar_mensaje("No se realizaron cambios.")
+            return
+
+        # Construir documento de validación mezclando valores actuales con los cambios
+        datos_validar = {
+            "nombre": cambios.get("nombre", producto_actual.get("nombre")),
+            "precio": cambios.get("precio", producto_actual.get("precio")),
+            "stock": cambios.get("stock", producto_actual.get("stock")),
+        }
+        if not self._repositorio.validar(datos_validar):
+            self._vista.mostrar_error("Los datos ingresados no son válidos.")
+            return
+
+        if self._repositorio.actualizar_por_id(id_producto, cambios):
+            self._vista.mostrar_mensaje("Producto actualizado correctamente.")
+            # Re-consultar desde MongoDB para mostrar el documento real guardado
+            producto_actualizado = self._repositorio.buscar_por_id(id_producto)
+            if producto_actualizado:
+                self._vista.mostrar_titulo("DATOS GUARDADOS")
+                self._vista.mostrar_producto(producto_actualizado)
+        else:
+            self._vista.mostrar_error("No se pudo actualizar el producto.")
