@@ -1,0 +1,166 @@
+@startuml SistemaComercioTech
+
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+
+package "Models (Data Access)" {
+    abstract class RepositorioBase {
+        # _db
+        # _coleccion
+        # _nombre_coleccion
+        + insertar(documento: dict)
+        + buscar_uno(filtro: dict)
+        + buscar_todos(filtro: dict)
+        + actualizar_uno(filtro: dict, cambios: dict)
+        + eliminar_uno(filtro: dict)
+        + {abstract} validar(datos: dict)
+    }
+
+    class RepositorioProductos {
+        + validar(datos: dict)
+        + crear(producto: Producto)
+        + listar_disponibles()
+        + listar_todos()
+        + buscar_por_id(id_producto: str)
+        + incrementar_stock(id_producto: str, cantidad: int)
+        + descontar_stock(id_producto: str, cantidad: int)
+        + eliminar_por_id(id_producto_str: str)
+    }
+
+    class RepositorioClientes {
+        + PATRON_RUT: re.Pattern
+        + PATRON_EMAIL: re.Pattern
+        + validar(datos: dict)
+        + crear(cliente: Cliente)
+        + buscar_por_rut(rut_cliente: str)
+        + listar_todos()
+        + actualizar_datos(rut_cliente: str, cambios: dict)
+        + eliminar_por_rut(rut_cliente: str)
+    }
+
+    class RepositorioPedidos {
+        + ESTADOS_VALIDOS: set
+        + validar(datos: dict)
+        + crear(pedido: Pedido)
+        + obtener_activos()
+        + listar_todos()
+        + actualizar_estado(codigo_pedido: str, nuevo_estado: str)
+        + eliminar_por_codigo(codigo_pedido: str)
+    }
+
+    class Producto {
+        + nombre: str
+        + precio: float
+        + stock: int
+        + categoria: str
+        + _id: str
+        + a_documento(): dict
+        + {static} desde_documento(doc: dict): Producto
+    }
+
+    class Cliente {
+        + rut: str
+        + nombre: str
+        + email: str
+        + telefono: str
+        + direccion: str
+        + _id: str
+        + a_documento(): dict
+        + {static} desde_documento(doc: dict): Cliente
+    }
+
+    class Pedido {
+        + codigo_pedido: str
+        + rut_cliente: str
+        + items: List[ItemPedido]
+        + estado: str
+        + fecha_creacion: datetime
+        + a_documento(): dict
+    }
+
+    class ItemPedido {
+        + producto_id: str
+        + nombre_producto: str
+        + cantidad: int
+        + precio_unitario: float
+        + a_documento(): dict
+    }
+
+    RepositorioBase <|-- RepositorioProductos
+    RepositorioBase <|-- RepositorioClientes
+    RepositorioBase <|-- RepositorioPedidos
+    
+    RepositorioProductos ..> Producto : gestiona
+    RepositorioClientes ..> Cliente : gestiona
+    RepositorioPedidos ..> Pedido : gestiona
+    Pedido *-- ItemPedido : contiene
+}
+
+package "Controllers" {
+    class ControladorPrincipal {
+        - _db
+        - _rol: str
+        - _vista: VistaBase
+        - _controlador_cliente: ControladorCliente
+        - _controlador_producto: ControladorProducto
+        - _controlador_pedido: ControladorPedido
+        + ejecutar()
+        - _mostrar_estado_servidor()
+    }
+
+    class ControladorProducto {
+        - _repositorio: RepositorioProductos
+        - _vista: VistaProducto
+        - _rol: str
+        + ejecutar()
+        - _registrar()
+        - _listar_en_stock()
+        - _eliminar()
+    }
+
+    class ControladorCliente {
+        - _repositorio: RepositorioClientes
+        - _vista: VistaCliente
+        - _rol: str
+        + ejecutar()
+    }
+
+    class ControladorPedido {
+        - _repositorio: RepositorioPedidos
+        - _vista: VistaPedido
+        - _rol: str
+        + ejecutar()
+    }
+}
+
+package "Views" {
+    class VistaBase {
+        + mostrar_titulo(titulo: str)
+        + mostrar_mensaje(msj: str)
+        + mostrar_error(msj: str)
+        + pedir_opcion(opciones: dict)
+    }
+    class VistaProducto
+    class VistaCliente
+    class VistaPedido
+
+    VistaBase <|-- VistaProducto
+    VistaBase <|-- VistaCliente
+    VistaBase <|-- VistaPedido
+}
+
+ControladorPrincipal *-- ControladorCliente
+ControladorPrincipal *-- ControladorProducto
+ControladorPrincipal *-- ControladorPedido
+ControladorPrincipal *-- VistaBase
+
+ControladorProducto o-- RepositorioProductos
+ControladorProducto o-- VistaProducto
+
+ControladorCliente o-- RepositorioClientes
+ControladorCliente o-- VistaCliente
+
+ControladorPedido o-- RepositorioPedidos
+ControladorPedido o-- VistaPedido
+
+@enduml
