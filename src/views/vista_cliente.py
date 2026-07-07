@@ -41,7 +41,12 @@ class VistaCliente(VistaBase):
             self.mostrar_mensaje("No hay clientes registrados.")
             return
         for c in clientes:
-            print(f"  - {c.get('rut')} | {c.get('nombre')} | {c.get('email')}")
+            info = f"  - {c.get('rut')} | {c.get('nombre')} | {c.get('email')}"
+            if c.get("telefono"):
+                info += f" | tel: {c.get('telefono')}"
+            if c.get("direccion"):
+                info += f" | dir: {c.get('direccion')}"
+            print(info)
 
     def solicitar_datos_modificacion(self, cliente_actual: dict) -> dict:
         print("\n  (Presione Enter para mantener el valor actual)")
