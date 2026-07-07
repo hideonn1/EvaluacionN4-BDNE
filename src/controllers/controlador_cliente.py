@@ -82,6 +82,7 @@ class ControladorCliente:
             )
 
     def _modificar(self) -> None:
+        """Permite modificar los datos de un cliente existente (excepto RUT e _id)."""
         rut = self._vista.solicitar_rut()
         cliente_actual = self._repositorio.buscar_por_rut(rut)
         if not cliente_actual:
