@@ -1,3 +1,4 @@
+from models.pedido import RepositorioPedidos
 from models.producto import Producto, RepositorioProductos
 from views.vista_producto import VistaProducto
 
@@ -6,6 +7,7 @@ class ControladorProducto:
     # Maneja el submenú y las acciones CRUD de productos.
     def __init__(self, db, rol: str):
         self._repositorio = RepositorioProductos(db)
+        self._repo_pedidos = RepositorioPedidos(db)
         self._vista = VistaProducto()
         self._rol = rol
 
@@ -56,6 +58,13 @@ class ControladorProducto:
 
     def _eliminar(self) -> None:
         id_producto = self._vista.solicitar_id()
+
+        if self._repo_pedidos.buscar_uno({"items.producto_id": id_producto.strip()}):
+            self._vista.mostrar_error(
+                "No se puede eliminar el producto porque está incluido en uno o más pedidos."
+            )
+            return
+
         if self._repositorio.eliminar_por_id(id_producto):
             self._vista.mostrar_baja("Producto eliminado.")
         else:
@@ -92,7 +101,6 @@ class ControladorProducto:
 
         if self._repositorio.actualizar_por_id(id_producto, cambios):
             self._vista.mostrar_mensaje("Producto actualizado correctamente.")
-            # Re-consultar desde MongoDB para mostrar el documento real guardado
             producto_actualizado = self._repositorio.buscar_por_id(id_producto)
             if producto_actualizado:
                 self._vista.mostrar_titulo("DATOS GUARDADOS")

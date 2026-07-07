@@ -39,14 +39,18 @@ class RepositorioProductos(RepositorioBase):
         super().__init__(db, "productos")
 
     def validar(self, datos: dict) -> bool:
-        if not datos.get("nombre"):
+        nombre = str(datos.get("nombre", ""))
+        if not nombre.strip():
             print("[Validación] El nombre del producto es obligatorio.")
+            return False
+        if nombre.strip().isdigit():
+            print("[Validación] El nombre del producto no puede contener únicamente números.")
             return False
         if datos.get("precio", -1) <= 0:
             print("[Validación] El precio debe ser mayor a 0.")
             return False
-        if datos.get("stock", -1) < 0:
-            print("[Validación] El stock no puede ser negativo.")
+        if datos.get("stock", -1) <= 0:
+            print("[Validación] El stock debe ser mayor a 0.")
             return False
         return True
 

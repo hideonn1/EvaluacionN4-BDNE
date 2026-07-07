@@ -1,4 +1,5 @@
 from models.cliente import Cliente, RepositorioClientes
+from models.pedido import RepositorioPedidos
 from views.vista_cliente import VistaCliente
 
 
@@ -7,6 +8,7 @@ class ControladorCliente:
 
     def __init__(self, db, rol: str):
         self._repositorio = RepositorioClientes(db)
+        self._repo_pedidos = RepositorioPedidos(db)
         self._vista = VistaCliente()
         self._rol = rol
 
@@ -65,6 +67,13 @@ class ControladorCliente:
 
     def _eliminar(self) -> None:
         rut = self._vista.solicitar_rut()
+
+        if self._repo_pedidos.buscar_uno({"rut_cliente": rut.strip()}):
+            self._vista.mostrar_error(
+                "No se puede eliminar el cliente porque tiene pedidos asociados."
+            )
+            return
+
         if self._repositorio.eliminar_por_rut(rut):
             self._vista.mostrar_baja("Cliente eliminado.")
         else:
@@ -73,7 +82,6 @@ class ControladorCliente:
             )
 
     def _modificar(self) -> None:
-        """Permite modificar los datos de un cliente existente (excepto RUT e _id)."""
         rut = self._vista.solicitar_rut()
         cliente_actual = self._repositorio.buscar_por_rut(rut)
         if not cliente_actual:
@@ -89,22 +97,26 @@ class ControladorCliente:
             self._vista.mostrar_mensaje("No se realizaron cambios.")
             return
 
-        if "email" in cambios and not self._repositorio.PATRON_EMAIL.match(
-            cambios["email"]
-        ):
-            self._vista.mostrar_error(
-                f"Email '{cambios['email']}' no tiene un formato válido."
-            )
+        datos_validar = {
+            "rut": cliente_actual.get("rut"),
+            "nombre": cambios.get("nombre", cliente_actual.get("nombre")),
+            "email": cambios.get("email", cliente_actual.get("email")),
+            "telefono": cambios.get("telefono", cliente_actual.get("telefono")),
+            "direccion": cambios.get("direccion", cliente_actual.get("direccion")),
+        }
+        if not self._repositorio.validar(datos_validar):
+            self._vista.mostrar_error("Los datos ingresados no son válidos.")
             return
 
-        if "telefono" in cambios and not self._repositorio.PATRON_TELEFONO.match(
-            cambios["telefono"]
-        ):
-            self._vista.mostrar_error(
-                f"Teléfono '{cambios['telefono']}' no es válido. "
-                "Use solo dígitos, espacios, guiones o +."
+        if "email" in cambios:
+            existente = self._repositorio.buscar_uno(
+                {"email": cambios["email"].strip().lower()}
             )
-            return
+            if existente and existente.get("rut") != rut:
+                self._vista.mostrar_error(
+                    f"El email '{cambios['email']}' ya está en uso por otro cliente."
+                )
+                return
 
         if self._repositorio.actualizar_datos(rut, cambios):
             self._vista.mostrar_mensaje("Cliente actualizado correctamente.")

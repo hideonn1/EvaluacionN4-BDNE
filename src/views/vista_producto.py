@@ -81,13 +81,13 @@ class VistaProducto(VistaBase):
             while True:
                 try:
                     nuevo_stock = int(stock_str)
-                    if nuevo_stock < 0:
+                    if nuevo_stock <= 0:
                         raise ValueError
                     campos["stock"] = nuevo_stock
                     break
                 except ValueError:
                     self.mostrar_error(
-                        "El stock debe ser un número entero no negativo. "
+                        "El stock debe ser un número entero mayor a 0. "
                         f"Valor ingresado: '{stock_str}'"
                     )
                     stock_str = input(

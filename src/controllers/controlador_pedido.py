@@ -151,15 +151,47 @@ class ControladorPedido:
 
     def _cambiar_estado(self) -> None:
         codigo = self._vista.solicitar_codigo()
+
+        pedido_actual = self._repositorio.buscar_uno({"codigo_pedido": codigo.strip()})
+        if not pedido_actual:
+            self._vista.mostrar_error("No se encontró ningún pedido con ese código.")
+            return
+
         estado = self._vista.solicitar_estado()
+
+        if pedido_actual.get("estado") == "cancelado" and estado != "cancelado":
+            self._vista.mostrar_error(
+                "No se puede cambiar el estado de un pedido que ya está cancelado."
+            )
+            return
+
+        if pedido_actual.get("estado") == "cancelado" and estado == "cancelado":
+            self._vista.mostrar_mensaje("El pedido ya se encuentra cancelado.")
+            return
+
         if self._repositorio.actualizar_estado(codigo, estado):
             self._vista.mostrar_mensaje("Estado actualizado.")
+            if estado == "cancelado":
+                for item in pedido_actual.get("items", []):
+                    self._repo_productos.incrementar_stock(
+                        item["producto_id"], item["cantidad"]
+                    )
+                self._vista.mostrar_mensaje("Stock de los productos restituido.")
         else:
             self._vista.mostrar_error("No se pudo actualizar el estado del pedido.")
 
     def _eliminar(self) -> None:
         codigo = self._vista.solicitar_codigo()
+
+        pedido_actual = self._repositorio.buscar_uno({"codigo_pedido": codigo.strip()})
+
         if self._repositorio.eliminar_por_codigo(codigo):
             self._vista.mostrar_mensaje("Pedido eliminado.")
+            if pedido_actual and pedido_actual.get("estado") != "cancelado":
+                for item in pedido_actual.get("items", []):
+                    self._repo_productos.incrementar_stock(
+                        item["producto_id"], item["cantidad"]
+                    )
+                self._vista.mostrar_mensaje("Stock de los productos restituido.")
         else:
             self._vista.mostrar_error("No se encontró el pedido o no se pudo eliminar.")
