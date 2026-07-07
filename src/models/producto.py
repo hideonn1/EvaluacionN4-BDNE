@@ -44,7 +44,9 @@ class RepositorioProductos(RepositorioBase):
             print("[Validación] El nombre del producto es obligatorio.")
             return False
         if nombre.strip().isdigit():
-            print("[Validación] El nombre del producto no puede contener únicamente números.")
+            print(
+                "[Validación] El nombre del producto no puede contener únicamente números."
+            )
             return False
         if datos.get("precio", -1) <= 0:
             print("[Validación] El precio debe ser mayor a 0.")
